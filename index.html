@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Forge Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* Sleek pro-tool palette — teal accent, true charcoal surfaces */
+  --bg:#0e1113;--panel:#15191c;--panel2:#1a1f23;--border:#283036;--border2:#343e45;
+  --surface:#1c2125;--hover:#242b30;--active:#2c353b;
+  --accent:#2dd4bf;--accent-dim:rgba(45,212,191,.15);--accent-glow:rgba(45,212,191,.4);
+  --a2:#fb7185;--a3:#34d399;--a4:#fbbf24;--a5:#38bdf8;
+  --text:#e8edef;--sub:#94a3a8;--dim:#5a666c;
+  --font:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+  --r:7px;--r-sm:5px;--r-lg:12px;
+  --sh:0 8px 30px rgba(0,0,0,.45);--sh-lg:0 18px 50px rgba(0,0,0,.6);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
+
+/* ════ SETUP ════ */
+#setup{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 0%,#16181f 0%,#0a0b0e 65%);display:flex;align-items:center;justify-content:center;z-index:200;overflow-y:auto;padding:20px}
+.sc{background:rgba(20,21,25,.96);border:1px solid var(--border);border-radius:18px;padding:42px 48px;width:600px;max-width:95vw;backdrop-filter:blur(20px);box-shadow:var(--sh-lg)}
+.sc-logo{display:flex;align-items:center;gap:14px;margin-bottom:34px}
+.sc-logo-icon{width:42px;height:42px;background:linear-gradient(135deg,var(--accent),#4a64d8);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:21px;box-shadow:0 4px 16px var(--accent-glow)}
+.sc-logo h1{font-size:23px;font-weight:700;letter-spacing:-.01em;color:#fff}
+.sc-logo span{font-size:10px;color:var(--sub);letter-spacing:.16em;text-transform:uppercase}
+.sc-section{margin-bottom:28px}
+.sc-section h3{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.sc-section h3::after{content:'';flex:1;height:1px;background:var(--border)}
+.world-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.wt{border:1px solid var(--border);border-radius:10px;padding:16px 12px;cursor:pointer;transition:all .15s;text-align:center;background:var(--surface);position:relative;overflow:hidden}
+.wt:hover{border-color:var(--border2);background:var(--hover)}
+.wt.active{border-color:var(--accent);background:var(--accent-dim);box-shadow:0 0 0 1px var(--accent) inset}
+.wt .wi{font-size:26px;margin-bottom:8px;opacity:.9}.wt .wl{font-size:12px;font-weight:600;color:var(--text)}.wt .ws{font-size:10px;color:var(--sub);margin-top:3px}
+.sc-row{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.sc-field label{display:block;font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.sc-field input,.sc-field select{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 11px;color:var(--text);font-family:var(--font);font-size:13px;transition:all .15s}
+.sc-field input:focus,.sc-field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.sc-field select option{background:var(--panel)}
+.custom-dims{display:none;margin-top:11px}.custom-dims.show{display:block}
+.btn-start{width:100%;padding:14px;background:var(--accent);border:none;border-radius:var(--r);color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;font-family:var(--font);transition:all .18s;box-shadow:0 4px 18px var(--accent-glow)}
+.btn-start:hover{background:#7d99ff;transform:translateY(-1px);box-shadow:0 7px 26px var(--accent-glow)}
+.btn-start:active{transform:translateY(0)}
+
+/* ════ EDITOR ════ */
+#editor{display:none;height:100dvh;flex-direction:column}
+#editor.on{display:flex}
+
+/* ── Topbar ── */
+#tb{height:48px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:6px;flex-shrink:0;overflow-x:auto;position:relative}
+#tb::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--accent),transparent 40%);opacity:.6;pointer-events:none}
+#tb::-webkit-scrollbar{display:none}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:13px;letter-spacing:.02em;color:var(--text);flex-shrink:0;margin-right:2px}
+.logo-icon{width:26px;height:26px;background:linear-gradient(135deg,var(--accent),#4a64d8);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 10px var(--accent-glow)}
+.sep{width:1px;height:20px;background:var(--border);flex-shrink:0;margin:0 4px}
+.tbg{display:flex;gap:2px;flex-shrink:0;background:var(--surface);border-radius:var(--r);padding:3px}
+.tb-btn{height:28px;padding:0 11px;border-radius:var(--r-sm);border:1px solid transparent;background:transparent;color:var(--sub);cursor:pointer;font-size:12px;font-weight:500;font-family:var(--font);display:flex;align-items:center;gap:5px;transition:all .12s;white-space:nowrap;flex-shrink:0}
+.tb-btn:hover{background:var(--hover);color:var(--text)}
+.tb-btn.on{background:var(--accent-dim);color:var(--accent)}
+.tb-btn.play{background:rgba(67,224,168,.14);color:var(--a3)}
+.tb-btn.play:hover{background:rgba(67,224,168,.22)}
+.tb-btn.accent{background:var(--accent);color:#fff;font-weight:600}
+.tb-btn.accent:hover{background:#7d99ff;color:#fff}
+#newgame-menu{position:absolute;top:52px;left:120px;background:var(--panel2);border:1px solid var(--border2);border-radius:var(--r-lg);padding:6px;z-index:120;display:none;flex-direction:column;gap:2px;min-width:264px;box-shadow:var(--sh);backdrop-filter:blur(16px)}
+#newgame-menu.show{display:flex;animation:popIn .14s ease}
+@keyframes popIn{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
+.ng-item{display:flex;align-items:center;gap:12px;padding:10px 11px;border-radius:var(--r);cursor:pointer;transition:background .1s}
+.ng-item:hover{background:var(--hover)}
+.ng-ico{font-size:21px;width:30px;text-align:center;flex-shrink:0;opacity:.95}
+.ng-name{font-size:13px;font-weight:600;color:var(--text)}
+.ng-desc{font-size:10.5px;color:var(--dim);margin-top:1px}
+
+/* graphics menu */
+#gfx-menu{position:absolute;top:52px;right:14px;background:var(--panel2);border:1px solid var(--border2);border-radius:var(--r-lg);padding:12px;z-index:120;display:none;flex-direction:column;gap:4px;min-width:244px;box-shadow:var(--sh);backdrop-filter:blur(16px)}
+#gfx-menu.show{display:flex;animation:popIn .14s ease}
+.gfx-sec{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin:10px 2px 4px}
+.gfx-sec:first-child{margin-top:0}
+.gfx-presets{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:2px}
+.gfx-preset{padding:8px 0;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface);color:var(--sub);cursor:pointer;font-size:11px;font-weight:500;font-family:var(--font);transition:all .12s}
+.gfx-preset:hover{border-color:var(--border2);color:var(--text)}
+.gfx-preset.on{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);font-weight:600}
+.gfx-tog{display:flex;align-items:center;gap:9px;padding:6px 5px;font-size:12px;color:var(--text);cursor:pointer;border-radius:var(--r-sm)}
+.gfx-tog:hover{background:var(--hover)}
+.gfx-tog input{accent-color:var(--accent);width:14px;height:14px}
+.gfx-note{font-size:9.5px;color:var(--dim);margin-top:7px;line-height:1.5;padding:0 2px}
+.gfx-slider{display:flex;align-items:center;gap:9px;padding:5px 2px;font-size:11px;color:var(--text)}
+.gfx-slider>span:first-child{width:52px;flex-shrink:0;color:var(--sub)}
+.gfx-slider input[type=range]{flex:1;accent-color:var(--accent);height:3px}
+.gfx-slider>span:last-child{width:34px;text-align:right;font-family:var(--mono);font-size:10px;color:var(--text)}
+
+/* tutorial */
+#tut-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);z-index:300;display:none;align-items:center;justify-content:center}
+#tut-overlay.show{display:flex}
+#tut-card{background:var(--panel2);border:1px solid var(--border2);border-radius:var(--r-lg);padding:30px 34px;width:480px;max-width:92vw;box-shadow:var(--sh-lg);animation:popIn .18s ease}
+#tut-step{font-size:15px;line-height:1.7;color:var(--text);min-height:120px}
+#tut-step h3{font-size:20px;margin-bottom:12px;color:#fff;font-weight:700}
+#tut-step b{color:var(--accent)}
+#tut-step .key{display:inline-block;background:var(--surface);border:1px solid var(--border2);border-radius:5px;padding:2px 8px;font-family:var(--mono);font-size:12px;color:#fff}
+#tut-dots{display:flex;gap:6px;justify-content:center;margin:18px 0}
+#tut-dots .d{width:7px;height:7px;border-radius:50%;background:var(--border2);transition:all .2s}
+#tut-dots .d.on{background:var(--accent);width:18px;border-radius:4px}
+#tut-btns{display:flex;gap:10px;justify-content:flex-end}
+.lbtn.accent2{background:var(--accent);color:#fff;border-color:var(--accent)}
+.lbtn.accent2:hover{background:#7d99ff;border-color:#7d99ff}
+.tb-btn.stop{background:rgba(255,107,129,.14);color:var(--a2)}
+.tb-btn.stop:hover{background:rgba(255,107,129,.22)}
+.tb-btn.del-btn:hover{color:var(--a2);background:rgba(255,107,129,.1)}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.fps{font-family:var(--mono);font-size:11px;color:var(--sub);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:4px 9px;flex-shrink:0}
+
+/* ── Body ── */
+#body{flex:1;display:grid;grid-template-columns:248px 1fr 290px;min-height:0;overflow:hidden}
+
+/* ── Left panel ── */
+#left{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.ptabs{display:flex;gap:2px;padding:8px 8px 0;flex-shrink:0}
+.ptab{flex:1;padding:8px 4px;text-align:center;font-size:11px;font-weight:600;letter-spacing:.01em;cursor:pointer;color:var(--dim);border-radius:var(--r-sm) var(--r-sm) 0 0;transition:all .12s;border-bottom:2px solid transparent}
+.ptab:hover{color:var(--sub)}
+.ptab.on{color:var(--text);border-bottom-color:var(--accent);background:var(--surface)}
+.tab-pane{flex:1;overflow:hidden;display:none;flex-direction:column;border-top:1px solid var(--border)}
+.tab-pane.on{display:flex}
+
+/* hierarchy */
+#hier-header{padding:11px 12px 7px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.obj-count{background:var(--accent);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;min-width:18px;text-align:center;display:none}
+.obj-count:not(:empty){display:inline-block}
+#addbar{padding:0 10px 10px;display:grid;grid-template-columns:repeat(6,1fr);gap:4px;border-bottom:1px solid var(--border);flex-shrink:0}
+.abtn{padding:7px 2px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:14px;text-align:center;transition:all .12s;line-height:1}
+.abtn:hover{border-color:var(--border2);background:var(--hover)}
+.abtn.on{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+#scene-list{flex:1;overflow-y:auto;padding:5px}
+.si{padding:7px 9px;cursor:pointer;display:flex;align-items:center;gap:7px;border-radius:var(--r-sm);transition:all .08s;user-select:none;margin-bottom:1px}
+.si:hover{background:var(--hover)}.si.sel{background:var(--accent-dim);box-shadow:inset 0 0 0 1px var(--accent-glow)}
+.si .ico{font-size:13px;flex-shrink:0;width:18px;text-align:center;opacity:.9}.si .lbl{flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.si .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.si .sop{opacity:0;font-size:11px;color:var(--dim);cursor:pointer;padding:2px 5px;border-radius:4px;transition:all .1s;flex-shrink:0}
+.si:hover .sop{opacity:1}.si .sop:hover{color:var(--text);background:var(--active)}.si .sop.del:hover{color:var(--a2);background:rgba(255,107,129,.12)}
+
+/* lights tab */
+#ltoolbar2{padding:8px;display:flex;gap:6px;border-bottom:1px solid var(--border);flex-shrink:0}
+#light-list{flex:1;overflow-y:auto}
+
+/* assets tab */
+#asset-toolbar{padding:10px;display:flex;gap:6px;flex-shrink:0}
+#asset-toolbar .lbtn{flex:1;text-align:center}
+#asset-search{margin:0 10px 8px;width:calc(100% - 20px);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 11px;color:var(--text);font-family:var(--font);font-size:12px;transition:all .15s}
+#asset-search:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+#asset-cats{display:flex;gap:3px;padding:0 10px 10px;border-bottom:1px solid var(--border)}
+.asset-cat{flex:1;padding:6px 0;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface);color:var(--sub);cursor:pointer;font-size:13px;transition:all .12s}
+.asset-cat:hover{border-color:var(--border2);color:var(--text)}
+.asset-cat.on{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+.asset-group{padding:10px 12px 5px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);position:sticky;top:0;background:var(--panel);z-index:1}
+
+/* terrain tab */
+.terr-scroll{flex:1;overflow-y:auto;padding:12px}
+.terr-sec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin:16px 2px 9px;display:flex;align-items:center;gap:7px}
+.terr-sec:first-child{margin-top:0}
+.terr-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:9px}
+.terr-btns.four{grid-template-columns:1fr 1fr}
+.terr-btn{padding:8px 4px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:11px;font-weight:500;font-family:var(--font);transition:all .12s}
+.terr-btn:hover{border-color:var(--border2);background:var(--hover)}
+.terr-btn.on{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+.terr-row{display:flex;align-items:center;gap:9px;margin-bottom:8px;font-size:11px}
+.terr-row label{width:72px;color:var(--sub);flex-shrink:0}
+.terr-row input[type=range]{flex:1;accent-color:var(--accent);height:3px}
+.terr-row span{width:28px;text-align:right;font-family:var(--mono);font-size:10px;color:var(--text)}
+.terr-hint{font-size:10px;color:var(--dim);line-height:1.5;margin:3px 0 5px}
+.terr-action{width:100%;text-align:center;margin-top:7px;padding:8px}
+.terr-action.danger{border-color:rgba(255,107,129,.3);color:var(--a2)}
+.terr-action.danger:hover{background:rgba(255,107,129,.1)}
+
+/* player model selector */
+#player-model{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);font-family:var(--font);font-size:11px;padding:6px 8px;max-width:130px;cursor:pointer}
+#player-model:focus{outline:none;border-color:var(--accent)}
+#player-model option{background:var(--panel)}
+
+/* play HUD */
+#play-hud{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:none;gap:13px;align-items:center;background:rgba(12,13,16,.78);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:9px 22px;pointer-events:none;z-index:30;box-shadow:var(--sh)}
+#play-hud.show{display:flex}
+#play-hud .phk{font-size:11px;color:rgba(255,255,255,.6)}
+#play-hud .phk b{color:#fff;font-weight:600}
+#play-hud .phd{width:1px;height:12px;background:rgba(255,255,255,.15)}
+#editor.playing #hud,#editor.playing #coord-hud{display:none}
+
+/* gameplay HUD */
+#game-hud{position:absolute;top:16px;left:16px;display:none;flex-direction:column;gap:9px;z-index:30;pointer-events:none}
+#game-hud.show{display:flex}
+.gh-row{display:flex;align-items:center;gap:9px}
+.gh-label{font-size:16px}
+.gh-bar{width:190px;height:13px;background:rgba(12,13,16,.65);border:1px solid rgba(255,255,255,.15);border-radius:7px;overflow:hidden;backdrop-filter:blur(8px)}
+.gh-fill{height:100%;width:100%;background:linear-gradient(90deg,#ff5c6e,#ff9c5c);transition:width .25s ease}
+.gh-stats{display:flex;gap:15px;background:rgba(12,13,16,.72);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:8px 16px;box-shadow:var(--sh)}
+.gh-stat{font-size:13px;color:rgba(255,255,255,.65)}
+.gh-stat b{color:#fff;font-family:var(--mono)}
+#game-end{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:40}
+#game-end.show{display:flex}
+#game-end-card{background:var(--panel2);border:1px solid var(--border2);border-radius:18px;padding:40px 52px;text-align:center;box-shadow:var(--sh-lg);animation:popIn .2s ease}
+#game-end-msg{font-size:34px;font-weight:700;margin-bottom:8px}
+#game-end-sub{font-size:14px;color:var(--sub);margin-bottom:24px;font-family:var(--mono)}
+#game-end-btn{font-size:14px;padding:11px 24px}
+#drive-hud{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:none;gap:13px;align-items:center;background:rgba(26,18,10,.8);backdrop-filter:blur(14px);border:1px solid rgba(255,180,80,.22);border-radius:22px;padding:9px 22px;pointer-events:none;z-index:30;box-shadow:var(--sh)}
+#drive-hud.show{display:flex}
+#drive-hud .phk{font-size:11px;color:rgba(255,220,180,.7)}
+#drive-hud .phk b{color:#ffd28a;font-weight:600}
+#drive-hud .phd{width:1px;height:12px;background:rgba(255,180,100,.22)}
+#drive-prompt{position:absolute;top:66px;left:50%;transform:translateX(-50%);display:none;background:rgba(92,200,255,.16);border:1px solid rgba(92,200,255,.4);border-radius:20px;padding:8px 20px;font-size:13px;font-weight:600;color:#a5e2ff;backdrop-filter:blur(10px);pointer-events:none;z-index:30}
+#asset-list{flex:1;overflow-y:auto;padding:5px}
+.asset-item{padding:7px 8px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .1s;border-radius:var(--r-sm);margin-bottom:1px}
+.asset-item:hover{background:var(--hover)}
+.asset-thumb{width:32px;height:32px;border-radius:var(--r-sm);background:linear-gradient(135deg,#2a2d36,#1a1c22);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;border:1px solid var(--border)}
+.asset-meta{flex:1;min-width:0}
+.asset-name{font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.asset-sub{font-size:10px;color:var(--dim)}
+.asset-add{font-size:11px;font-weight:600;color:var(--accent);opacity:0;flex-shrink:0}
+.asset-item:hover .asset-add{opacity:1}
+#asset-loading{padding:10px;font-size:11px;color:var(--a4);display:none}
+#asset-loading.show{display:block}
+
+/* layers */
+#ltoolbar{padding:10px;display:flex;gap:6px;flex-shrink:0}
+.lbtn{padding:6px 12px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface);color:var(--sub);cursor:pointer;font-size:11px;font-weight:500;font-family:var(--font);transition:all .12s}
+.lbtn:hover{border-color:var(--border2);color:var(--text);background:var(--hover)}
+#layer-list{flex:1;overflow-y:auto;padding:5px}
+.li{padding:8px 9px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .08s;border-radius:var(--r-sm)}
+.li:hover{background:var(--hover)}.li.act{background:var(--accent-dim);box-shadow:inset 0 0 0 1px var(--accent-glow)}
+.li .lsw{width:11px;height:11px;border-radius:3px;flex-shrink:0}.li .lnm{flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li .lops{display:flex;gap:3px;opacity:0;transition:opacity .1s}.li:hover .lops{opacity:1}
+.lop{padding:3px 6px;border-radius:4px;border:none;background:transparent;color:var(--dim);cursor:pointer;font-size:11px;font-family:var(--font);transition:all .1s}
+.lop:hover{color:var(--text);background:var(--active)}.lop.ldel:hover{color:var(--a2)}
+.lop-row{padding:1px 12px 8px;display:flex;align-items:center;gap:8px;font-size:10px;color:var(--dim)}
+.lop-row input[type=range]{flex:1;accent-color:var(--accent);height:3px}
+
+/* Sun controls */
+#sun-ctrl{padding:12px;display:flex;flex-direction:column;gap:9px;border-bottom:1px solid var(--border);flex-shrink:0}
+#sun-ctrl label{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.sun-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--sub)}
+.sun-row span{width:12px;text-align:center;font-weight:700}
+.sun-row input[type=range]{flex:1;accent-color:var(--a4);height:3px}
+
+/* ── Viewport ── */
+#vp{position:relative;overflow:hidden;background:#0a0b0e}
+#main-canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block}
+#no-webgpu{display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;background:var(--bg);color:var(--sub);font-size:14px}
+#no-webgpu h2{color:var(--a2);font-size:20px}
+
+/* HUD */
+#hud{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:11px;align-items:center;background:rgba(12,13,16,.72);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.07);border-radius:22px;padding:7px 18px;pointer-events:none;white-space:nowrap;box-shadow:var(--sh)}
+#hud .hk{font-size:11px;color:rgba(255,255,255,.5);display:flex;align-items:center;gap:5px}
+#hud .hk b{color:rgba(255,255,255,.85);font-weight:600}
+#hud .hd{width:1px;height:12px;background:rgba(255,255,255,.12)}
+
+#coord-hud{position:absolute;top:12px;right:14px;background:rgba(12,13,16,.72);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:6px 12px;font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.5);pointer-events:none}
+#coord-hud b{color:rgba(255,255,255,.9)}
+#mode-banner{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(67,224,168,.12);border:1px solid rgba(67,224,168,.3);border-radius:20px;padding:6px 18px;font-size:12px;font-weight:600;color:var(--a3);pointer-events:none;display:none;backdrop-filter:blur(10px)}
+#mode-banner.show{display:block}
+
+/* Coord placer */
+#cp{position:absolute;bottom:74px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--border2);border-radius:var(--r-lg);padding:18px 20px;display:none;flex-direction:column;gap:12px;min-width:296px;z-index:20;backdrop-filter:blur(16px);box-shadow:var(--sh)}
+#cp.show{display:flex}
+#cp h4{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--sub)}
+.cpi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.cpi-wrap{display:flex;flex-direction:column;gap:4px}
+.cpi-wrap label{font-size:10px;color:var(--sub);text-align:center;font-weight:600;letter-spacing:.06em}
+.cpi-wrap input{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px;color:var(--text);font-family:var(--mono);font-size:12px;text-align:center;width:100%}
+.cpi-wrap input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim)}
+.cp-actions{display:flex;gap:8px}
+.cp-go{flex:1;padding:9px;border-radius:var(--r);border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .15s}
+.cp-go:hover{background:#7d99ff}
+.cp-cancel{padding:9px 14px;border-radius:var(--r);border:1px solid var(--border);background:transparent;color:var(--sub);font-size:12px;cursor:pointer;font-family:var(--font)}
+.cp-cancel:hover{color:var(--text);background:var(--hover)}
+
+/* ── Inspector ── */
+#right{background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+#insp-hdr{padding:13px 14px;font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--dim);text-transform:uppercase;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+#insp-body{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:11px}
+.empty{color:var(--dim);text-align:center;padding:64px 20px;font-size:12px;line-height:2}
+.empty .ei{font-size:34px;margin-bottom:14px;opacity:.5}
+.ni{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:9px 11px;color:var(--text);font-family:var(--font);font-size:14px;font-weight:600;transition:all .15s}
+.ni:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.tb-badge{font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.1em;font-weight:600;background:var(--surface);padding:2px 8px;border-radius:5px}
+.pdiv{height:1px;background:var(--border);margin:1px 0}
+.slbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);padding:2px 0;display:flex;align-items:center;gap:8px}
+.slbl::after{content:'';flex:1;height:1px;background:var(--border)}
+.pg label{display:block;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;font-weight:600}
+.v3r{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.axw{display:flex;flex-direction:column;gap:3px}
+.axl{font-size:9px;color:var(--dim);text-align:center;letter-spacing:.06em;font-weight:700;cursor:ns-resize;padding:1px 0;user-select:none}
+.axl:hover{color:var(--accent)}
+.ni2{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px;color:var(--text);font-family:var(--mono);font-size:11px;text-align:center;transition:all .15s}
+.ni2:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim)}
+.crow{display:flex;gap:8px;align-items:center}
+.cpk{width:34px;height:30px;border:1px solid var(--border);border-radius:var(--r-sm);padding:2px;background:var(--surface);cursor:pointer}
+.chx{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 8px;color:var(--text);font-family:var(--mono);font-size:11px;transition:all .15s}
+.chx:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim)}
+.trow{display:flex;align-items:center;justify-content:space-between;padding:2px 0}
+.trow span{font-size:12px;color:var(--text)}
+.tog{position:relative;width:36px;height:20px;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0}
+.tslider{position:absolute;inset:0;background:var(--border2);border-radius:10px;cursor:pointer;transition:.18s}
+.tslider::before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.18s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tog input:checked+.tslider{background:var(--accent)}
+.tog input:checked+.tslider::before{transform:translateX(16px)}
+.ibtn{width:100%;padding:8px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);color:var(--sub);cursor:pointer;font-size:12px;font-weight:500;font-family:var(--font);transition:all .12s;display:flex;align-items:center;justify-content:center;gap:6px}
+.ibtn:hover{background:var(--hover);border-color:var(--border2);color:var(--text)}
+.ibtn.phy{border-color:rgba(67,224,168,.3);color:var(--a3)}.ibtn.phy:hover{background:rgba(67,224,168,.1)}
+.ibtn.focus{border-color:rgba(92,200,255,.3);color:var(--a5)}.ibtn.focus:hover{background:rgba(92,200,255,.1)}
+.ibtn.del2{border-color:rgba(255,107,129,.25);color:var(--a2)}.ibtn.del2:hover{background:rgba(255,107,129,.1)}
+.ibtn.dup{border-color:rgba(255,206,92,.25);color:var(--a4)}.ibtn.dup:hover{background:rgba(255,206,92,.1)}
+.lasel{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;color:var(--text);font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s}
+.lasel:focus{outline:none;border-color:var(--accent)}.lasel option{background:var(--panel)}
+.phys-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px;display:flex;flex-direction:column;gap:9px}
+
+/* ════ BLUEPRINT OVERLAY ════ */
+#bp-overlay{position:fixed;inset:48px 0 0 0;background:#0a0b0e;z-index:150;display:none;grid-template-columns:236px 1fr}
+#bp-overlay.on{display:grid}
+#bp-sidebar{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.bp-side-hdr{padding:14px;font-size:13px;font-weight:700;letter-spacing:.01em;border-bottom:1px solid var(--border)}
+.bp-side-hint{padding:11px 14px;font-size:10px;color:var(--dim);line-height:1.6;border-bottom:1px solid var(--border)}
+.bp-palette{flex:1;overflow-y:auto;padding:8px}
+.bp-pgroup{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin:12px 4px 6px}
+.bp-pitem{padding:8px 11px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;margin-bottom:4px;display:flex;align-items:center;gap:9px;transition:all .12s}
+.bp-pitem:hover{border-color:var(--border2);background:var(--hover)}
+.bp-pdot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.bp-side-foot{padding:10px;display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--border)}
+.bp-side-foot .lbtn{text-align:center;padding:8px}
+#bp-canvas-wrap{position:relative;overflow:hidden}
+#bp-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:default}
+#bp-topbar{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;background:rgba(12,13,16,.72);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:6px 8px 6px 16px;pointer-events:none;box-shadow:var(--sh)}
+#bp-topbar .tb-btn{pointer-events:auto}
+.bp-title{font-size:12px;font-weight:600;color:#fff}
+.bp-help{font-size:10px;color:rgba(255,255,255,.45)}
+
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:var(--dim);background-clip:padding-box}
+</style>
+</head>
+<body>
+
+<!-- ════ SETUP ════ -->
+<div id="setup">
+<div class="sc">
+  <div class="sc-logo">
+    <div class="sc-logo-icon">⚙</div>
+    <div><h1>FORGE ENGINE</h1><span>WebGPU · PBR · Shadows · v1.0</span></div>
+  </div>
+  <div class="sc-section">
+    <h3>World Type</h3>
+    <div class="world-grid">
+      <div class="wt active" data-world="finite"><div class="wi">🏔</div><div class="wl">Finite World</div><div class="ws">Custom size terrain</div></div>
+      <div class="wt" data-world="infinite"><div class="wi">🌍</div><div class="wl">Infinite World</div><div class="ws">Endless exploration</div></div>
+      <div class="wt" data-world="custom"><div class="wi">✏️</div><div class="wl">Custom Setup</div><div class="ws">Full manual control</div></div>
+    </div>
+    <div class="custom-dims show" id="cdims">
+      <div class="sc-row" style="margin-top:10px">
+        <div class="sc-field"><label>Width (m)</label><input id="ww" type="number" value="200" min="10" max="5000"></div>
+        <div class="sc-field"><label>Depth (m)</label><input id="wd" type="number" value="200" min="10" max="5000"></div>
+      </div>
+    </div>
+  </div>
+  <div class="sc-section">
+    <h3>Scene Settings</h3>
+    <div class="sc-row">
+      <div class="sc-field"><label>Terrain Style</label>
+        <select id="tstyle">
+          <option value="hills">🌄 Rolling Hills</option>
+          <option value="mountains">🏔 Mountains</option>
+          <option value="flat">🌾 Flat Plain</option>
+          <option value="none">⬜ Empty Scene</option>
+        </select>
+      </div>
+      <div class="sc-field"><label>Gravity</label>
+        <select id="grav">
+          <option value="-9.81">🌍 Earth (9.81)</option>
+          <option value="-1.62">🌙 Moon (1.62)</option>
+          <option value="-3.72">🔴 Mars (3.72)</option>
+          <option value="0">🚀 Zero-G</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="sc-section">
+    <h3>Project</h3>
+    <div class="sc-field"><label>Project Name</label><input id="pname" type="text" value="My World" placeholder="Enter project name..."></div>
+  </div>
+  <button class="btn-start" id="btn-start">🚀 &nbsp;Create World</button>
+</div>
+</div>
+
+<!-- ════ EDITOR ════ -->
+<div id="editor">
+<div id="tb">
+  <div class="logo"><div class="logo-icon">⚙</div>FORGE</div>
+  <div class="sep"></div>
+  <div class="tbg">
+    <button class="tb-btn accent" id="btn-newgame" title="Start from a ready-made game">🎮 New Game ▾</button>
+    <button class="tb-btn" id="btn-tutorial" title="How to make a game">❔ Help</button>
+  </div>
+  <div class="sep"></div>
+  <div class="tbg">
+    <button class="tb-btn on"  id="m-select" title="Select (Q)">⬚ Select</button>
+    <button class="tb-btn"     id="m-click"  title="Click to place (E)">📍 Place</button>
+    <button class="tb-btn"     id="m-coord"  title="Exact coords (R)">🎯 Coords</button>
+  </div>
+  <!-- New Game menu -->
+  <div id="newgame-menu">
+    <div class="ng-item" data-tpl="driving"><span class="ng-ico">🏁</span><div><div class="ng-name">Driving Map</div><div class="ng-desc">Hills, cars & roads — press E to drive</div></div></div>
+    <div class="ng-item" data-tpl="openworld"><span class="ng-ico">🌍</span><div><div class="ng-name">Open World</div><div class="ng-desc">Mountains, forest, houses & water</div></div></div>
+    <div class="ng-item" data-tpl="obstacle"><span class="ng-ico">🎯</span><div><div class="ng-name">Obstacle Course</div><div class="ng-desc">Jump across floating platforms</div></div></div>
+    <div class="ng-item" data-tpl="empty"><span class="ng-ico">⬜</span><div><div class="ng-name">Empty Flat World</div><div class="ng-desc">Start from a blank flat plain</div></div></div>
+  </div>
+  <div class="sep"></div>
+  <div class="tbg" id="obj-btns">
+    <button class="tb-btn abtn2" data-type="cube"     title="Cube">⬛ Cube</button>
+    <button class="tb-btn abtn2" data-type="sphere"   title="Sphere">🔵 Sphere</button>
+    <button class="tb-btn abtn2" data-type="plane"    title="Plane">▬ Plane</button>
+    <button class="tb-btn abtn2" data-type="terrain"  title="Terrain">🏔 Terrain</button>
+    <button class="tb-btn abtn2" data-type="cylinder" title="Cylinder">🛢 Cylinder</button>
+    <button class="tb-btn abtn2" data-type="cone"     title="Cone">🔺 Cone</button>
+  </div>
+  <div class="sep"></div>
+  <div class="tbg">
+    <button class="tb-btn on" id="btn-grid"  title="Toggle grid">⊞ Grid</button>
+    <button class="tb-btn"    id="btn-fly"   title="Fly mode (F)">✈ Fly</button>
+    <button class="tb-btn"    id="btn-focus" title="Focus (Space)">◎ Focus</button>
+  </div>
+  <div class="sep"></div>
+  <div class="tbg">
+    <button class="tb-btn accent" id="btn-graphics" title="Advanced graphics settings">✨ Graphics ▾</button>
+    <button class="tb-btn" id="btn-blueprint" title="Blueprint visual scripting (string mode)">🔗 Blueprint</button>
+  </div>
+  <!-- Graphics settings menu -->
+  <div id="gfx-menu">
+    <div class="gfx-sec">Quality Preset</div>
+    <div class="gfx-presets">
+      <button class="gfx-preset" data-q="0">Low</button>
+      <button class="gfx-preset" data-q="1">Medium</button>
+      <button class="gfx-preset on" data-q="2">Ultra</button>
+    </div>
+    <div class="gfx-sec">Advanced Effects</div>
+    <label class="gfx-tog"><input type="checkbox" id="gfx-clouds" checked> ☁ Volumetric Clouds</label>
+    <label class="gfx-tog"><input type="checkbox" id="gfx-godrays" checked> 🌅 God Rays</label>
+    <label class="gfx-tog"><input type="checkbox" id="gfx-water" checked> 🌊 Realistic Water</label>
+    <div class="gfx-sec">Core</div>
+    <label class="gfx-tog"><input type="checkbox" id="gfx-ssao" checked> ◐ Ambient Occlusion</label>
+    <label class="gfx-tog"><input type="checkbox" id="gfx-ssr" checked> ✦ Reflections (SSR)</label>
+    <label class="gfx-tog"><input type="checkbox" id="gfx-fog" checked> ≋ Fog</label>
+    <div class="gfx-sec">Time of Day & Weather</div>
+    <div class="gfx-slider"><span>🕐 Time</span><input type="range" id="gfx-tod" min="0" max="1" step="0.01" value="0.35"><span id="gfx-tod-v">9:00</span></div>
+    <div class="gfx-slider"><span>⏩ Cycle</span><input type="range" id="gfx-dayspeed" min="0" max="2" step="0.1" value="0"><span id="gfx-dayspeed-v">off</span></div>
+    <div class="gfx-slider"><span>🌧 Rain</span><input type="range" id="gfx-rain" min="0" max="1" step="0.05" value="0"><span id="gfx-rain-v">0%</span></div>
+    <div class="gfx-note">GI bounce + FXAA scale with the preset (lighter on Low).</div>
+  </div>
+  <div class="tb-right">
+    <button class="tb-btn del-btn" id="btn-del"    title="Delete (Del)">🗑</button>
+    <button class="tb-btn"         id="btn-clear"  title="Clear scene">⊘ Clear</button>
+    <button class="tb-btn"         id="btn-export" title="Save world to file (Ctrl+S)">💾 Save</button>
+    <button class="tb-btn"         id="btn-load"   title="Load world from file">📂 Load</button>
+    <button class="tb-btn"         id="btn-share"  title="Copy a shareable link">🔗 Share</button>
+    <div class="sep"></div>
+    <select id="player-model" title="Player character"></select>
+    <button class="tb-btn play" id="btn-play">▶ Play</button>
+    <button class="tb-btn stop" id="btn-stop" style="display:none">■ Stop</button>
+    <div class="sep"></div>
+    <span class="fps" id="fps">-- fps</span>
+  </div>
+</div>
+
+<div id="body">
+  <!-- ── LEFT ── -->
+  <div id="left">
+    <div class="ptabs">
+      <div class="ptab on" data-tab="hierarchy">Scene</div>
+      <div class="ptab"    data-tab="assets">Assets</div>
+      <div class="ptab"    data-tab="terrain">Terrain</div>
+      <div class="ptab"    data-tab="lights">Lights</div>
+      <div class="ptab"    data-tab="layers">Layers</div>
+    </div>
+
+    <!-- Hierarchy -->
+    <div class="tab-pane on" id="tab-hierarchy">
+      <div id="hier-header"><span>Scene Objects</span><span id="obj-count" class="obj-count"></span></div>
+      <div id="addbar">
+        <button class="abtn" data-type="cube"     title="Add Cube">⬛</button>
+        <button class="abtn" data-type="sphere"   title="Add Sphere">🔵</button>
+        <button class="abtn" data-type="plane"    title="Add Plane">▬</button>
+        <button class="abtn" data-type="terrain"  title="Add Terrain">🏔</button>
+        <button class="abtn" data-type="cylinder" title="Add Cylinder">🛢</button>
+        <button class="abtn" data-type="cone"     title="Add Cone">🔺</button>
+      </div>
+      <div id="scene-list"></div>
+    </div>
+
+    <!-- Assets -->
+    <div class="tab-pane" id="tab-assets">
+      <div id="asset-toolbar">
+        <button class="lbtn" id="btn-import-glb">⬆ Import .glb / .gltf</button>
+        <input type="file" id="glb-file" accept=".glb,.gltf,model/gltf-binary" style="display:none" multiple>
+      </div>
+      <input type="text" id="asset-search" placeholder="Search 100+ assets…" autocomplete="off">
+      <div id="asset-cats">
+        <button class="asset-cat on" data-cat="All">All</button>
+        <button class="asset-cat" data-cat="Characters">🧍</button>
+        <button class="asset-cat" data-cat="Vehicles">🚗</button>
+        <button class="asset-cat" data-cat="Nature">🌲</button>
+        <button class="asset-cat" data-cat="Buildings">🏠</button>
+        <button class="asset-cat" data-cat="Props">📦</button>
+      </div>
+      <div id="asset-list"></div>
+    </div>
+
+    <!-- Terrain -->
+    <div class="tab-pane" id="tab-terrain">
+      <div class="terr-scroll">
+        <div class="terr-sec">⛏ Sculpt Brush</div>
+        <div class="terr-btns">
+          <button class="terr-btn" id="ts-raise">▲ Raise</button>
+          <button class="terr-btn" id="ts-lower">▼ Lower</button>
+          <button class="terr-btn" id="ts-smooth">≈ Smooth</button>
+        </div>
+        <div class="terr-row"><label>Brush Size</label><input type="range" id="ts-radius" min="3" max="40" step="1" value="14"><span id="ts-radius-v">14</span></div>
+        <div class="terr-row"><label>Strength</label><input type="range" id="ts-strength" min="0.1" max="2" step="0.1" value="0.6"><span id="ts-strength-v">0.6</span></div>
+        <div class="terr-hint">Pick a brush, then drag on the ground in the viewport.</div>
+
+        <div class="terr-sec">⛰ Feature Presets</div>
+        <div class="terr-btns four">
+          <button class="terr-btn tf-kind on" data-kind="mountain">🏔 Mountain</button>
+          <button class="terr-btn tf-kind" data-kind="hills">🌄 Hills</button>
+          <button class="terr-btn tf-kind" data-kind="canyon">🏜 Canyon</button>
+          <button class="terr-btn tf-kind" data-kind="plateau">⬛ Plateau</button>
+        </div>
+        <div class="terr-row"><label>Feature Size</label><input type="range" id="tf-size" min="15" max="100" step="5" value="50"><span id="tf-size-v">50</span></div>
+        <button class="lbtn terr-action" id="tf-add">＋ Add Feature at View Center</button>
+        <button class="lbtn terr-action danger" id="tf-flatten">⊘ Flatten Terrain</button>
+
+        <div class="terr-sec">🌊 Water</div>
+        <div class="terr-row"><label>Sea Level</label><input type="range" id="tw-level" min="-10" max="20" step="0.5" value="2"><span id="tw-level-v">2</span></div>
+        <button class="lbtn terr-action" id="tw-add">＋ Add Water Plane</button>
+      </div>
+    </div>
+
+    <!-- Lights -->
+    <div class="tab-pane" id="tab-lights">
+      <div id="sun-ctrl">
+        <label>☀ Sun Direction</label>
+        <div class="sun-row"><span>X</span><input id="sun-x" type="range" min="-1" max="1" step="0.05" value="0.6"><span style="font-family:var(--mono);font-size:10px">0.6</span></div>
+        <div class="sun-row"><span>Y</span><input id="sun-y" type="range" min="0.1" max="1" step="0.05" value="0.8"><span style="font-family:var(--mono);font-size:10px">0.8</span></div>
+        <div class="sun-row"><span>Z</span><input id="sun-z" type="range" min="-1" max="1" step="0.05" value="0.4"><span style="font-family:var(--mono);font-size:10px">0.4</span></div>
+      </div>
+      <div id="ltoolbar2"><button class="lbtn" id="btn-addlight">＋ Add Point Light</button></div>
+      <div id="light-list"></div>
+    </div>
+
+    <!-- Layers -->
+    <div class="tab-pane" id="tab-layers">
+      <div id="ltoolbar"><button class="lbtn" id="btn-addlayer">＋ Add Layer</button></div>
+      <div id="layer-list"></div>
+    </div>
+  </div>
+
+  <!-- ── VIEWPORT ── -->
+  <div id="vp">
+    <canvas id="main-canvas"></canvas>
+    <div id="no-webgpu"><h2>WebGPU Not Available</h2><p>Use Chrome 113+ or Edge 113+.</p></div>
+    <div id="hud">
+      <div class="hk">LMB <b>Orbit</b></div><div class="hd"></div>
+      <div class="hk">MMB <b>Pan</b></div><div class="hd"></div>
+      <div class="hk">Scroll <b>Zoom</b></div><div class="hd"></div>
+      <div class="hk"><b>Q</b> Sel · <b>E</b> Place · <b>F</b> Fly</div><div class="hd"></div>
+      <div class="hk"><b>Ctrl+D</b> Dup · <b>Ctrl+Z</b> Undo · <b>Del</b> Delete</div>
+    </div>
+    <div id="coord-hud">Cursor: <b id="cur-pos">0, 0, 0</b></div>
+    <div id="mode-banner"></div>
+    <div id="play-hud">
+      <span class="phk"><b>WASD</b> Move</span><span class="phd"></span>
+      <span class="phk"><b>Shift</b> Sprint</span><span class="phd"></span>
+      <span class="phk"><b>Space</b> Jump</span><span class="phd"></span>
+      <span class="phk"><b>E</b> Drive</span><span class="phd"></span>
+      <span class="phk"><b>Drag</b> Look</span><span class="phd"></span>
+      <span class="phk">Press <b>■ Stop</b> to edit</span>
+    </div>
+    <div id="drive-hud">
+      <span class="phk"><b>W</b> Gas</span><span class="phd"></span>
+      <span class="phk"><b>S</b> Brake/Reverse</span><span class="phd"></span>
+      <span class="phk"><b>A/D</b> Steer</span><span class="phd"></span>
+      <span class="phk"><b>Space</b> Handbrake</span><span class="phd"></span>
+      <span class="phk"><b>E</b> Exit Car</span>
+    </div>
+    <div id="drive-prompt"></div>
+    <!-- Gameplay HUD -->
+    <div id="game-hud">
+      <div class="gh-row"><span class="gh-label">❤</span><div class="gh-bar"><div id="gh-health" class="gh-fill"></div></div></div>
+      <div class="gh-stats">
+        <span class="gh-stat">🏆 <b id="gh-score">0</b></span>
+        <span class="gh-stat" id="gh-collect-wrap">🪙 <b id="gh-collect">0/0</b></span>
+        <span class="gh-stat" id="gh-cp-wrap">🚩 <b id="gh-cp">0/0</b></span>
+        <span class="gh-stat">⏱ <b id="gh-time">0:00</b></span>
+      </div>
+    </div>
+    <div id="game-end">
+      <div id="game-end-card">
+        <div id="game-end-msg"></div>
+        <div id="game-end-sub"></div>
+        <button class="lbtn accent2" id="game-end-btn">⟲ Play Again</button>
+      </div>
+    </div>
+    <div id="cp">
+      <h4>📍 Place at Exact Position</h4>
+      <div class="cpi-row">
+        <div class="cpi-wrap"><label>X</label><input id="cp-x" type="number" value="0" step="0.5"></div>
+        <div class="cpi-wrap"><label>Y</label><input id="cp-y" type="number" value="1" step="0.5"></div>
+        <div class="cpi-wrap"><label>Z</label><input id="cp-z" type="number" value="0" step="0.5"></div>
+      </div>
+      <div class="cp-actions">
+        <button class="cp-go" id="cp-do">Place Object</button>
+        <button class="cp-cancel" id="cp-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── INSPECTOR ── -->
+  <div id="right">
+    <div id="insp-hdr">
+      <span>Inspector</span>
+      <span id="insp-type" class="tb-badge"></span>
+    </div>
+    <div id="insp-body">
+      <div class="empty">
+        <div class="ei">🎯</div>
+        Select an object<br>
+        <span style="font-size:11px;color:var(--dim)">Click in the viewport<br>or use Place mode to add objects</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ BLUEPRINT OVERLAY ════ -->
+<!-- ════ TUTORIAL ════ -->
+<div id="tut-overlay">
+  <div id="tut-card">
+    <div id="tut-step"></div>
+    <div id="tut-dots"></div>
+    <div id="tut-btns">
+      <button class="lbtn" id="tut-skip">Skip</button>
+      <button class="lbtn accent2" id="tut-next">Next ▸</button>
+    </div>
+  </div>
+</div>
+
+<div id="bp-overlay">
+  <div id="bp-sidebar">
+    <div class="bp-side-hdr">🔗 Blueprint Nodes</div>
+    <div class="bp-side-hint">Click to add a node, then drag a string from an output ● to an input to connect.</div>
+    <div class="bp-palette" id="bp-palette"></div>
+    <div class="bp-side-foot">
+      <button class="lbtn" id="bp-clear">Clear Graph</button>
+      <button class="lbtn" id="bp-close-2">Close</button>
+    </div>
+  </div>
+  <div id="bp-canvas-wrap">
+    <canvas id="bp-canvas"></canvas>
+    <div id="bp-topbar">
+      <span class="bp-title">Visual Scripting · String Mode</span>
+      <span class="bp-help">MMB / drag empty = pan · scroll = zoom · drag header = move · Del = delete node</span>
+      <button class="tb-btn" id="bp-close">✕ Close</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// Update sun slider labels
+['sun-x','sun-y','sun-z'].forEach(id => {
+  document.getElementById(id).addEventListener('input', e => {
+    e.target.nextElementSibling.textContent = parseFloat(e.target.value).toFixed(2);
+  });
+});
+</script>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
